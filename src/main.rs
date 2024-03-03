@@ -18,17 +18,25 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let secret = env::var("WHM_SECRET")
         .map_err(|_| "Environment variable WHM_SECRET is not set. Please set it and try again.")?;
 
-    let outputfile = env::var("WHM_OUTPUTFILE")
-        .map_err(|_| "Environment variable WHM_OUTPUTFILE is not set. Please set it and try again.")?;
+    let outputfile = env::var("WHM_OUTPUTFILE").map_err(|_| {
+        "Environment variable WHM_OUTPUTFILE is not set. Please set it and try again."
+    })?;
 
-
-    let error_file = env::var("WHM_LOGFILE")
+    let logfile = env::var("WHM_LOGFILE")
         .map_err(|_| "Environment variable WHM_LOGFILE is not set. Please set it and try again.")?;
 
     let action = "GetProducts";
     let responsetype = "json";
 
-    make_request(&url, &username, &secret, action, responsetype)?;
+    make_request(
+        &url,
+        &username,
+        &secret,
+        action,
+        responsetype,
+        &outputfile,
+        &logfile,
+    )?;
 
     Ok(())
 }
@@ -39,6 +47,8 @@ fn make_request(
     password: &str,
     action: &str,
     responsetype: &str,
+    outputfile: &str,
+    logfile: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let client = blocking::Client::new();
 
@@ -61,7 +71,8 @@ fn make_request(
         .text()
         .map_err(|err| format!("Failed to read response body: {}", err))?;
 
-    println!("{:?}", body);
+    std::fs::write(outputfile, &body)?;
+    std::fs::write(logfile, body)?;
 
     Ok(())
 }
